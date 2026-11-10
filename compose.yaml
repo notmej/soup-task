@@ -1,0 +1,57 @@
+x-app-base: &app-base
+  build: .
+  environment: &app-environment
+    DATABASE_URL: postgres://soup:soup_dev_password@db:5432/soup_jobs
+  depends_on:
+    db:
+      condition: service_healthy
+  restart: unless-stopped
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: soup
+      POSTGRES_PASSWORD: soup_dev_password
+      POSTGRES_DB: soup_jobs
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - soup_pgdata:/var/lib/postgresql/data
+      - ./sql/001init.sql:/docker-entrypoint-initdb.d/001init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U soup -d soup_jobs"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  api:
+    <<: *app-base
+    command: ["node", "dist/main.js"]
+    ports:
+      - "3000:3000"
+
+
+#the four test workers
+  worker-1:
+    <<: *app-base
+    command: ["node", "dist/worker.js"]
+    environment: { <<: *app-environment, WORKER_ID: worker-1 }
+  worker-2:
+    <<: *app-base
+    command: ["node", "dist/worker.js"]
+    environment: { <<: *app-environment, WORKER_ID: worker-2 }
+  worker-3:
+    <<: *app-base
+    command: ["node", "dist/worker.js"]
+    environment: { <<: *app-environment, WORKER_ID: worker-3 }
+  worker-4:
+    <<: *app-base
+    command: ["node", "dist/worker.js"]
+    environment: { <<: *app-environment, WORKER_ID: worker-4 }
+
+volumes:
+  soup_pgdata:
+
+
+

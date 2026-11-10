@@ -1,0 +1,32 @@
+{
+  "name": "soup-task",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "worker": "node dist/worker.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/notmej/soup-task.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/notmej/soup-task/issues"
+  },
+  "homepage": "https://github.com/notmej/soup-task#readme",
+  "dependencies": {
+    "dotenv": "^18.0.10",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/pg": "^8.23.1",
+    "typescript": "^7.0.2"
+  }
+}
