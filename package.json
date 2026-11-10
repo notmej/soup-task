@@ -7,7 +7,8 @@
     "build": "tsc",
     "start": "node dist/main.js",
     "worker": "node dist/worker.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run build && node --test dist/tests/api.test.js",
+    "setup": "node --experimental-strip-types setup.ts"
   },
   "repository": {
     "type": "git",
