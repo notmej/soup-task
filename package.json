@@ -8,9 +8,11 @@
     "build": "tsc",
     "start": "node dist/main.js",
     "worker": "node dist/worker.js",
+    "test:worker": "npm run build && node --test dist/tests/worker.test.js",
     "test:api-funct": "npm run build && node --test dist/tests/api.test.js",
     "test:recovery": "npm run build && node --test dist/tests/recovery.test.js",
-    "test:recovery:live": "npm run build && node --test dist/tests/recovery-live.test.js"
+    "test:recovery:live": "npm run build && node --test dist/tests/recovery-live.test.js",
+    "test:silent": "npm run build && node --test dist/tests/silent-failures.test.js"
   },
   "repository": {
     "type": "git",
