@@ -31,12 +31,13 @@ services:
     ports:
       - "3000:3000"
 
-
-#the four test workers
   worker-1:
     <<: *app-base
     command: ["node", "dist/worker.js"]
-    environment: { <<: *app-environment, WORKER_ID: worker-1 }
+    environment:
+      <<: *app-environment
+      WORKER_ID: worker-1
+      # HEARTBEAT_INTERVAL_MS: "1000"
   worker-2:
     <<: *app-base
     command: ["node", "dist/worker.js"]
@@ -49,9 +50,33 @@ services:
     <<: *app-base
     command: ["node", "dist/worker.js"]
     environment: { <<: *app-environment, WORKER_ID: worker-4 }
+  worker-5:
+    <<: *app-base
+    command: ["node", "dist/worker.js"]
+    environment:
+      <<: *app-environment
+      WORKER_ID: worker-5
+
+  worker-6:
+    <<: *app-base
+    command: ["node", "dist/worker.js"]
+    environment:
+      <<: *app-environment
+      WORKER_ID: worker-6
+
+  worker-7:
+    <<: *app-base
+    command: ["node", "dist/worker.js"]
+    environment:
+      <<: *app-environment
+      WORKER_ID: worker-7
+
+  worker-8:
+    <<: *app-base
+    command: ["node", "dist/worker.js"]
+    environment:
+      <<: *app-environment
+      WORKER_ID: worker-8
 
 volumes:
   soup_pgdata:
-
-
-

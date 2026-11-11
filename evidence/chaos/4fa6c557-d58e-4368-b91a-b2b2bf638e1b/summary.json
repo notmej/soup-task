@@ -1,0 +1,47 @@
+{
+  "runId": "4fa6c557-d58e-4368-b91a-b2b2bf638e1b",
+  "prefix": "chaos-4fa6c557-d58e-4368-b91a-b2b2bf638e1b-",
+  "startedAt": "2026-11-11T12:26:50.939Z",
+  "finishedAt": "2026-11-11T12:29:43.909Z",
+  "configured": {
+    "jobs": 10000,
+    "newJobsPerSecond": 100,
+    "timeoutMs": 600000,
+    "killEveryMs": 2000,
+    "workers": 8
+  },
+  "measured": {
+    "created": 10000,
+    "duplicatePairs": 1000,
+    "cancellations": 500,
+    "kills": 68,
+    "httpRequests": 11500,
+    "submitElapsedMs": 100089,
+    "newJobRate": 99.9,
+    "totalHttpRateDuringSubmitApprox": 114.9,
+    "httpLatencyP50Ms": 35,
+    "httpLatencyP95Ms": 81,
+    "httpLatencyP99Ms": 169
+  },
+  "finalDatabase": {
+    "total": "10000",
+    "queued": "0",
+    "running": "0",
+    "succeeded": "8769",
+    "failed": "731",
+    "cancelled": "500",
+    "succeeded_missing_effect": "0",
+    "non_success_with_effect": "0",
+    "duplicate_effect_jobs": "0"
+  },
+  "passed": true,
+  "errors": [],
+  "limitations": [
+    "One local run does not prove production reliability or sustained 100 RPS capacity.",
+    "SIGKILL tests process crashes, not network partitions, power loss, disk corruption or database failover.",
+    "A 30-second recovery deadline can leave jobs temporarily running; inspect timeouts and failures, do not hide them.",
+    "The effects table proves only committed database effects, not external side effects.",
+    "The harness samples races; it cannot prove all possible interleavings, clock-skew or isolation-level behavior.",
+    "Observed POST rate includes concurrent retries/cancellations; measured create rate is reported separately."
+  ]
+}

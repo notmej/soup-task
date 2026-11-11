@@ -11,7 +11,13 @@ import { setTimeout as delay } from "node:timers/promises";
 const workerId = process.env.WORKER_ID ?? `worker-${process.pid}`;
 
 const POLL_INTERVAL_MS = 250;
-const HEARTBEAT_INTERVAL_MS = 10_000;
+const HEARTBEAT_INTERVAL_MS = Number(
+  process.env.HEARTBEAT_INTERVAL_MS ?? 10_000,
+);
+
+if (!Number.isInteger(HEARTBEAT_INTERVAL_MS) || HEARTBEAT_INTERVAL_MS < 100) {
+  throw new Error("Invalid HEARTBEAT_INTERVAL_MS");
+}
 const RECOVERY_INTERVAL_MS = 2_000;
 
 // A reusable asynchronous delay.
@@ -81,7 +87,7 @@ async function runWorker(): Promise<void> {
       console.log(
         `[${workerId}] Claimed job ${job.id}, attempt ${job.attempts}`,
       );
-      
+
       const controller = new AbortController();
       const heartbeatTask = heartbeatLoop(job, controller.signal);
 
@@ -104,22 +110,6 @@ async function runWorker(): Promise<void> {
         //stop heartbeat aftr job finish
         controller.abort();
         await heartbeatTask;
-      }
-
-      const result = job.should_fail ? "failed" : "succeeded";
-
-      // Commit the result only if we still own the job.
-      const completed = await completeJob(
-        job.id,
-        job.lease_token,
-        workerId,
-        result,
-      );
-
-      if (completed) {
-        console.log(`[${workerId}] Job ${job.id}: ${result}`);
-      } else {
-        console.log(`[${workerId}] Job ${job.id}: result rejected`);
       }
     } catch (error) {
       console.error(`[${workerId}] Worker error:`, error);

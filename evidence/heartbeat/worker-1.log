@@ -1,0 +1,12 @@
+worker-1-1  | [worker-1] Worker started
+worker-1-1  | [worker-1] Claimed job ae7928af-945f-4c84-8775-c1cdba155853, attempt 1
+worker-1-1  | [worker-1] Renewed lease for ae7928af-945f-4c84-8775-c1cdba155853
+worker-1-1  | [worker-1] Renewed lease for ae7928af-945f-4c84-8775-c1cdba155853
+worker-1-1  | [worker-1] Renewed lease for ae7928af-945f-4c84-8775-c1cdba155853
+worker-1-1  | [worker-1] Renewed lease for ae7928af-945f-4c84-8775-c1cdba155853
+worker-1-1  | [worker-1] Renewed lease for ae7928af-945f-4c84-8775-c1cdba155853
+worker-1-1  | [worker-1] Renewed lease for ae7928af-945f-4c84-8775-c1cdba155853
+worker-1-1  | [worker-1] Renewed lease for ae7928af-945f-4c84-8775-c1cdba155853
+worker-1-1  | [worker-1] Renewed lease for ae7928af-945f-4c84-8775-c1cdba155853
+worker-1-1  | [worker-1] Renewed lease for ae7928af-945f-4c84-8775-c1cdba155853
+worker-1-1  | [worker-1] Job ae7928af-945f-4c84-8775-c1cdba155853: succeeded

@@ -12,7 +12,8 @@
     "test:api-funct": "npm run build && node --test dist/tests/api.test.js",
     "test:recovery": "npm run build && node --test dist/tests/recovery.test.js",
     "test:recovery:live": "npm run build && node --test dist/tests/recovery-live.test.js",
-    "test:silent": "npm run build && node --test dist/tests/silent-failures.test.js"
+    "test:silent": "npm run build && node --test dist/tests/silent-failures.test.js",
+    "test:chaos": "npm run build && node dist/tests/chaos.js"
   },
   "repository": {
     "type": "git",
