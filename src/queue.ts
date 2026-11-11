@@ -125,3 +125,60 @@ export async function completeJob(
     client.release();
   }
 }
+
+export async function recoverExpiredJobs(
+  limit: number = 100,
+): Promise<string[]> {
+  const result = await pool.query<{ id: string }>(
+    `
+    WITH expired_jobs AS (
+      SELECT id
+      FROM jobs
+      WHERE status = 'running'
+        AND lease_expires_at <= clock_timestamp()
+      ORDER BY lease_expires_at, id
+      FOR UPDATE SKIP LOCKED
+      LIMIT $1
+    )
+    UPDATE jobs AS j
+    SET
+      status = 'queued',
+      worker_id = NULL,
+      lease_token = NULL,
+      lease_expires_at = NULL,
+      updated_at = clock_timestamp(),
+      finished_at = NULL
+    FROM expired_jobs
+    WHERE j.id = expired_jobs.id
+    RETURNING j.id
+    `,
+    [limit],
+  );
+
+  return result.rows.map((row) => row.id);
+}
+
+export async function renewLease(
+  jobId: string,
+  leaseToken: string,
+  workerId: string,
+): Promise<boolean> {
+  const result = await pool.query(
+    `
+    UPDATE jobs
+    SET
+      lease_expires_at =
+        clock_timestamp() + INTERVAL '30 seconds',
+      updated_at = clock_timestamp()
+    WHERE id = $1
+      AND status = 'running'
+      AND lease_token = $2
+      AND worker_id = $3
+      AND lease_expires_at > clock_timestamp()
+    RETURNING id
+    `,
+    [jobId, leaseToken, workerId],
+  );
+
+  return result.rows.length === 1;
+}

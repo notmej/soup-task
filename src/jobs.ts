@@ -110,32 +110,6 @@ export async function createJob(key: string, input: CreateJobInput) {
     job,
     created: false,
   };
-
-  //
-  //---- SAMPLE INPUT ----
-  //curl -i -X POST http://localhost:3000/jobs \
-  //   -H "Content-Type: application/json" \
-  //   -H "Idempotency-Key: test-001" \
-  //   -d '{"durationMs":5000}'
-  //--- SAMPLE OUTPUT ----
-  // {
-  //
-  // "id":"76a36a3b-a7ac-4c64-ba7b-7b1f0a35547e",
-  // "idempotency_key":"test-001",
-  // "request_fingerprint":"a2f1e2a7602cbab8401a65bedec9d504bdd3f8cc518bff1875adf5b3ea5512ab",
-  // "duration_ms":5000,
-  // "should_fail":false,
-  //
-  // "status":"queued",
-  // "worker_id":null,
-  // "lease_token":null,
-  // "lease_expires_at":null,
-  // "attempts":0,
-  // "created_at":"2026-11-10T19:01:54.126Z",
-  // "updated_at":"2026-11-10T19:01:54.126Z",
-  // "finished_at":null
-  // }
-  // --------------------
 }
 
 /**

@@ -88,7 +88,7 @@ function asPage(body: unknown): PaginationResponse {
 
 // One parent test ensures the dependent checks execute in the checklist order.
 // Each subtest is separately reported as passed or failed.
-test("Soup API integration checklist (workers stopped)", async (t) => {
+test("Stage 1 - Core API functionality (job creation, retrival with pagination, idempodency, job cancelation, Database integrity", async (t) => {
   let jobId = "";
   let originalFinishedAt: string | null = null;
 

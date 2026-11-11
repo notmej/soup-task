@@ -4,11 +4,13 @@
   "description": "",
   "main": "dist/main.js",
   "scripts": {
+    "setup": "node --experimental-strip-types setup.ts",
     "build": "tsc",
     "start": "node dist/main.js",
     "worker": "node dist/worker.js",
-    "test": "npm run build && node --test dist/tests/api.test.js",
-    "setup": "node --experimental-strip-types setup.ts"
+    "test:api-funct": "npm run build && node --test dist/tests/api.test.js",
+    "test:recovery": "npm run build && node --test dist/tests/recovery.test.js",
+    "test:recovery:live": "npm run build && node --test dist/tests/recovery-live.test.js"
   },
   "repository": {
     "type": "git",
