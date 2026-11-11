@@ -1,6 +1,18 @@
+/**
+ * PostgreSQL-backed job queue operations.
+ *
+ * This module implements atomic claiming, lease-based ownership, completion,
+ * expired-lease recovery, and lease renewal. Workers call these operations to
+ * coordinate through PostgreSQL rather than communicating with one another.
+ *
+ * A lease token identifies an individual claim attempt. Ownership-sensitive
+ * operations require the matching job, worker, and token, as well as a lease
+ * that has not expired according to the database clock.
+ */
 import { randomUUID } from "node:crypto";
 import { pool } from "./db";
 
+/** The job details returned to a worker after a successful claim. */
 export interface ClaimedJob {
   id: string;
   duration_ms: number;
@@ -9,6 +21,16 @@ export interface ClaimedJob {
   lease_token: string;
 }
 
+/**
+ * Atomically claim the oldest available queued job for a worker.
+ *
+ * `FOR UPDATE SKIP LOCKED` skips rows locked by concurrent claimers. The
+ * selected row is updated in the same SQL statement, assigning ownership,
+ * incrementing the attempt counter, and starting a 30-second lease.
+ *
+ * @param workerId Identifier of the worker requesting work.
+ * @returns The claimed job, or `null` if no unlocked queued job is available.
+ */
 //claim one avail job atomcly
 export async function claimJob(workerId: string): Promise<ClaimedJob | null> {
   const leaseToken = randomUUID();
@@ -46,8 +68,28 @@ export async function claimJob(workerId: string): Promise<ClaimedJob | null> {
   return result.rows[0] ?? null;
 }
 
+/** Terminal execution outcomes reported by a worker. */
 export type JobResult = "succeeded" | "failed";
 
+/**
+ * Commit a worker's result only while it still owns a valid lease.
+ *
+ * The transaction first locks and checks the running job. A successful
+ * result inserts an execution record, then updates the job to its terminal
+ * state and clears lease ownership. These changes commit together: a failed
+ * transaction cannot leave only the job update or only the execution record.
+ *
+ * A failed result does not create an execution record. Database uniqueness
+ * constraints provide an additional safeguard against duplicate committed
+ * records; this operation does not guarantee exactly-once external effects.
+ *
+ * @param jobId Job to complete.
+ * @param leaseToken Token issued for the worker's claim attempt.
+ * @param workerId Identifier of the claiming worker.
+ * @param result Terminal outcome (`succeeded` or `failed`).
+ * @returns `true` if committed; `false` if ownership or lease validity fails.
+ * @throws If a database operation fails; the transaction is rolled back.
+ */
 export async function completeJob(
   jobId: string,
   leaseToken: string,
@@ -126,6 +168,17 @@ export async function completeJob(
   }
 }
 
+/**
+ * Requeue running jobs whose leases have expired.
+ *
+ * Each invocation processes at most `limit` unlocked expired rows. The
+ * recovery update clears the old owner and token so another worker can make
+ * a fresh claim; it deliberately preserves the accumulated attempt count.
+ * `SKIP LOCKED` allows recovery to coexist with concurrent job operations.
+ *
+ * @param limit Maximum number of expired jobs to recover (default: 100).
+ * @returns IDs of jobs moved from `running` back to `queued`.
+ */
 export async function recoverExpiredJobs(
   limit: number = 100,
 ): Promise<string[]> {
@@ -158,6 +211,19 @@ export async function recoverExpiredJobs(
   return result.rows.map((row) => row.id);
 }
 
+/**
+ * Extend the current worker's lease for another 30 seconds.
+ *
+ * The conditional update succeeds only for a running job with the matching
+ * worker ID and lease token whose lease has not already expired. PostgreSQL's
+ * `clock_timestamp()` is used for both the validity check and new expiration.
+ * A stale worker receives `false` instead of regaining ownership.
+ *
+ * @param jobId Job whose lease should be renewed.
+ * @param leaseToken Token belonging to the current claim attempt.
+ * @param workerId Worker that currently owns the claim.
+ * @returns `true` if exactly one job was renewed; otherwise `false`.
+ */
 export async function renewLease(
   jobId: string,
   leaseToken: string,

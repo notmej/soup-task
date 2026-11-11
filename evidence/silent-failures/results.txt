@@ -1,0 +1,61 @@
+
+> soup-task@1.0.0 test:silent
+> npm run build && node --test dist/tests/silent-failures.test.js
+
+
+> soup-task@1.0.0 build
+> tsc
+
+TAP version 13
+# Subtest: Stage 3 — silent-failure safety (workers STOPPED)
+    # Subtest: 01 - Concurrent workers claim distinct jobs; no double claim
+    ok 1 - 01 - Concurrent workers claim distinct jobs; no double claim
+      ---
+      duration_ms: 82.301958
+      type: 'test'
+      ...
+    # Subtest: 02 - Zombie worker returning after lease expiry is fenced off
+    ok 2 - 02 - Zombie worker returning after lease expiry is fenced off
+      ---
+      duration_ms: 12.571833
+      type: 'test'
+      ...
+    # Subtest: 03 - Concurrent cancellation and completion: exactly one final outcome
+    ok 3 - 03 - Concurrent cancellation and completion: exactly one final outcome
+      ---
+      duration_ms: 88.909709
+      type: 'test'
+      ...
+    # Subtest: 04 - Concurrent POST retries: one job, one key, conflicting payload rejected
+    ok 4 - 04 - Concurrent POST retries: one job, one key, conflicting payload rejected
+      ---
+      duration_ms: 106.538875
+      type: 'test'
+      ...
+    # Subtest: 05 - READ COMMITTED behavior and row-lock serialization
+    ok 5 - 05 - READ COMMITTED behavior and row-lock serialization
+      ---
+      duration_ms: 97.468833
+      type: 'test'
+      ...
+    # Subtest: 06 - Clock skew: lease decisions use PostgreSQL clock
+    ok 6 - 06 - Clock skew: lease decisions use PostgreSQL clock
+      ---
+      duration_ms: 8.192417
+      type: 'test'
+      ...
+    1..6
+ok 1 - Stage 3 — silent-failure safety (workers STOPPED)
+  ---
+  duration_ms: 404.339041
+  type: 'test'
+  ...
+1..1
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 493.784458

@@ -1,3 +1,14 @@
+/**
+ * Background worker process for the PostgreSQL-backed job queue.
+ *
+ * Each process has its own worker ID and continuously claims queued jobs,
+ * simulates their execution, and attempts to commit their final state.
+ * A separate recovery loop requeues jobs whose leases have expired.
+ *
+ * Lease ownership and terminal-state correctness are enforced by the queue
+ * functions, not by this process's in-memory state. Run multiple independent
+ * worker processes to process jobs concurrently.
+ */
 import "dotenv/config";
 import {
   claimJob,
@@ -8,23 +19,52 @@ import {
 } from "./queue";
 import { setTimeout as delay } from "node:timers/promises";
 
+/**
+ * Identifies this process when claiming, renewing, and completing jobs.
+ * WORKER_ID may be supplied by the container configuration; otherwise the
+ * process ID provides a default identifier.
+ */
 const workerId = process.env.WORKER_ID ?? `worker-${process.pid}`;
 
+/** Time between claim attempts when the queue has no available jobs. */
 const POLL_INTERVAL_MS = 250;
+/**
+ * Time between lease-renewal attempts while processing a claimed job.
+ * The default is 10 seconds, shorter than the 30-second lease in queue.ts.
+ */
 const HEARTBEAT_INTERVAL_MS = Number(
   process.env.HEARTBEAT_INTERVAL_MS ?? 10_000,
 );
 
+/** Reject heartbeat intervals that are invalid or excessively short. */
 if (!Number.isInteger(HEARTBEAT_INTERVAL_MS) || HEARTBEAT_INTERVAL_MS < 100) {
   throw new Error("Invalid HEARTBEAT_INTERVAL_MS");
 }
+/** Time between scans for running jobs with expired leases. */
 const RECOVERY_INTERVAL_MS = 2_000;
 
+/**
+ * Waits for a specified duration without blocking the event loop.
+ * @param ms - Delay in milliseconds.
+ * @returns A promise that resolves after the delay.
+ */
 // A reusable asynchronous delay.
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Periodically renews the lease for an active job until stopped.
+ *
+ * The AbortSignal allows execution cleanup to interrupt the timer when the
+ * job finishes. If renewal is rejected, this worker no longer owns the job
+ * and stops sending heartbeats. Transient renewal errors are logged; later
+ * iterations may retry unless the signal is aborted. A separate ownership
+ * check in completeJob() prevents stale results from being committed.
+ *
+ * @param job - The claimed job, including its unique lease token.
+ * @param signal - Cancellation signal for the heartbeat timer.
+ */
 async function heartbeatLoop(
   job: ClaimedJob,
   signal: AbortSignal,
@@ -54,6 +94,14 @@ async function heartbeatLoop(
   }
 }
 
+/**
+ * Continuously scans for expired leases and requeues recoverable jobs.
+ *
+ * This loop operates independently of job execution. Any worker can perform
+ * recovery, and the database-level claim/locking logic coordinates concurrent
+ * recovery scans. Errors are logged so the next scan can still proceed.
+ * The loop intentionally runs for the lifetime of the worker process.
+ */
 async function recoveryLoop(): Promise<void> {
   while (true) {
     try {
@@ -69,6 +117,19 @@ async function recoveryLoop(): Promise<void> {
   }
 }
 
+/**
+ * Starts the worker's main polling and execution loop.
+ *
+ * For each claimed job, a heartbeat loop runs alongside simulated execution.
+ * The job's configured duration determines how long execution takes, and
+ * should_fail determines its intended terminal result. completeJob() checks
+ * the lease token and worker ID before accepting the result, so a worker
+ * that lost ownership cannot overwrite a newer attempt.
+ *
+ * The heartbeat is aborted and awaited in a finally block, including when
+ * job processing fails. Unexpected errors are logged and followed by a short
+ * delay before polling again. This function normally runs indefinitely.
+ */
 async function runWorker(): Promise<void> {
   console.log(`[${workerId}] Worker started`);
   void recoveryLoop();
@@ -88,6 +149,7 @@ async function runWorker(): Promise<void> {
         `[${workerId}] Claimed job ${job.id}, attempt ${job.attempts}`,
       );
 
+      // Start periodic lease renewal while this attempt is in progress.
       const controller = new AbortController();
       const heartbeatTask = heartbeatLoop(job, controller.signal);
 
@@ -118,6 +180,7 @@ async function runWorker(): Promise<void> {
   }
 }
 
+/** Log an unexpected top-level failure and terminate with an error status. */
 runWorker().catch((error) => {
   console.error(`[${workerId}] Fatal error:`, error);
   process.exit(1);
